@@ -30,6 +30,9 @@ python3 bot.py
 4. В разделе Settings → Start Command указать:
    - python3 bot.py
 
+> Важно: приложение не запустится без `BOT_TOKEN`.
+> В репозитории не должно быть реального токена.
+
 Если вы используете Railway, именно здесь нужно ввести свой токен:
 - Railway → Project → Variables → New Variable
 - Name: BOT_TOKEN
