@@ -3,21 +3,6 @@ from __future__ import annotations
 import asyncio
 import datetime
 import logging
-import sys
-from pathlib import Path
-
-
-def _ensure_project_root_on_path() -> None:
-    start = Path(__file__).resolve().parent
-    for candidate in (start, *start.parents):
-        if (candidate / "repositories").exists() and (candidate / "handlers").exists() and (candidate / "data").exists():
-            root_str = str(candidate)
-            if root_str not in sys.path:
-                sys.path.insert(0, root_str)
-            break
-
-
-_ensure_project_root_on_path()
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
