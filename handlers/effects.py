@@ -9,7 +9,7 @@ import logging
 from typing import List, Optional
 
 from aiogram import Bot
-from aiogram.types import CallbackQuery, FSInputFile
+from aiogram.types import CallbackQuery, FSInputFile, Message
 
 from keyboards.factory import to_markup
 from handlers.utils import safe_edit, safe_edit_by_id, swap_reply_keyboard
@@ -23,6 +23,17 @@ logger = logging.getLogger(__name__)
 
 def _panel_key(user_id: int) -> str:
     return f"panel:{user_id}"
+
+
+# ── Хелперы для хендлеров: один вызов, без повторяющихся kwargs ──
+async def dispatch_message(message: Message, container, effects: List[Effect]) -> None:
+    await execute(effects, bot=message.bot, chat_id=message.chat.id,
+                  user_id=message.from_user.id, container=container)
+
+
+async def dispatch_callback(callback: CallbackQuery, container, effects: List[Effect]) -> None:
+    await execute(effects, bot=callback.bot, chat_id=callback.message.chat.id,
+                  user_id=callback.from_user.id, container=container, callback=callback)
 
 
 async def execute(
