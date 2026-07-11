@@ -1,82 +1,49 @@
+"""Настройки: разделы (reply) + значения (inline) + адаптив. Адаптер над VM."""
 from __future__ import annotations
 
-from aiogram import Router, F
+from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
 
 import callbacks as cb
 from containers import Container
-from keyboards.main_kb import (
-    settings_menu_kb, settings_level_kb, settings_time_kb, settings_size_kb, settings_voice_kb,
-)
-from presenters import settings_view
-from handlers.utils import safe_edit
+from keyboards import builders as kb
+from handlers.effects import execute
 
 router = Router()
 
-# cb-поле → (поле модели, клавиатура выбора, заголовок)
-_FIELD_MAP = {
-    "level": ("level", settings_level_kb, "🎚 <b>Сложность</b>\nКакие слова показывать в тестах:"),
-    "time": ("quiz_seconds", settings_time_kb, "⏱ <b>Время на ответ</b>\nСколько секунд на вопрос:"),
-    "size": ("quiz_size", settings_size_kb, "🔢 <b>Вопросов в тесте</b>\nДлина одной сессии:"),
-    "voice": ("voice", settings_voice_kb, "🔊 <b>Голос озвучки</b>\nАкцент и пол диктора:"),
-}
+_SECTION_TEXTS = {kb.BTN_S_LEVEL, kb.BTN_S_TIME, kb.BTN_S_SIZE, kb.BTN_S_VOICE}
 
 
-def _cast(model_field: str, raw: str):
-    if raw == "none":
-        return None
-    if model_field in ("quiz_seconds", "quiz_size"):
-        return int(raw)
-    return raw  # level ("A1"..) или voice (short name)
+@router.message(F.text == kb.BTN_SETTINGS)
+async def open_settings(message: Message, bot: Bot, container: Container) -> None:
+    await execute(await container.settings_vm.open(message.from_user.id),
+                  bot=bot, chat_id=message.chat.id, user_id=message.from_user.id)
 
 
-@router.message(F.text == "⚙️ Настройки")
-async def open_settings(message: Message, container: Container) -> None:
-    s = await container.settings.get(message.from_user.id)
-    await message.answer(settings_view(s), reply_markup=settings_menu_kb())
-
-
-@router.callback_query(F.data == cb.SETTINGS_MENU)
-async def settings_root(callback: CallbackQuery, container: Container) -> None:
-    s = await container.settings.get(callback.from_user.id)
-    await safe_edit(callback.message, settings_view(s), settings_menu_kb())
-    await callback.answer()
-
-
-@router.callback_query(F.data.in_(cb.SETTING_OPEN_ALL))
-async def open_chooser(callback: CallbackQuery, container: Container) -> None:
-    _model_field, kb, title = _FIELD_MAP[cb.parse_setting_open(callback.data)]
-    s = await container.settings.get(callback.from_user.id)
-    await safe_edit(callback.message, title, kb(s))
-    await callback.answer()
+@router.message(F.text.in_(_SECTION_TEXTS))
+async def open_field(message: Message, bot: Bot, container: Container) -> None:
+    await execute(await container.settings_vm.open_field(message.from_user.id, message.text),
+                  bot=bot, chat_id=message.chat.id, user_id=message.from_user.id)
 
 
 @router.callback_query(lambda c: cb.is_setting_apply(c.data))
-async def apply_setting(callback: CallbackQuery, container: Container) -> None:
+async def apply_setting(callback: CallbackQuery, bot: Bot, container: Container) -> None:
     field, raw = cb.parse_setting_apply(callback.data)
-    model_field = _FIELD_MAP[field][0]
-    try:
-        s = await container.settings.update(callback.from_user.id, model_field, _cast(model_field, raw))
-    except ValueError:
-        await callback.answer("Неизвестное значение", show_alert=True)
-        return
-    await safe_edit(callback.message, settings_view(s), settings_menu_kb())
-    await callback.answer("✅ Сохранено")
+    effects = await container.settings_vm.apply(callback.from_user.id, field, raw)
+    await execute(effects, bot=bot, chat_id=callback.message.chat.id,
+                  user_id=callback.from_user.id, callback=callback)
 
 
-# ─── Адаптив: применение предложения сменить уровень ─────────────────────────
 @router.callback_query(F.data.startswith(cb.LEVEL_SET))
-async def level_apply(callback: CallbackQuery, container: Container) -> None:
+async def level_apply(callback: CallbackQuery, bot: Bot, container: Container) -> None:
     level = cb.parse_level_set(callback.data)
-    await container.settings.update(callback.from_user.id, "level", level)
-    await container.stats.reset(callback.from_user.id, level)  # свежий отсчёт на новом уровне
-    await safe_edit(callback.message, f"✅ Сложность изменена на <b>{level}</b>. Продолжаем 💪", None)
-    await callback.answer("Готово")
+    effects = await container.settings_vm.set_level(callback.from_user.id, level)
+    await execute(effects, bot=bot, chat_id=callback.message.chat.id,
+                  user_id=callback.from_user.id, callback=callback)
 
 
 @router.callback_query(F.data == cb.LEVEL_KEEP)
-async def level_keep(callback: CallbackQuery, container: Container) -> None:
-    s = await container.settings.get(callback.from_user.id)
-    await container.stats.reset(callback.from_user.id, s.level)  # не предлагать снова сразу
-    await safe_edit(callback.message, "Ок, оставляем текущий уровень 👍", None)
-    await callback.answer()
+async def level_keep(callback: CallbackQuery, bot: Bot, container: Container) -> None:
+    effects = await container.settings_vm.keep_level(callback.from_user.id)
+    await execute(effects, bot=bot, chat_id=callback.message.chat.id,
+                  user_id=callback.from_user.id, callback=callback)

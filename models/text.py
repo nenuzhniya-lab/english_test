@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 from models.level import Level
 
@@ -12,7 +13,7 @@ class ListeningText:
     level: Level = Level.A1
 
     @classmethod
-    def from_dict(cls, data: dict) -> "ListeningText":
+    def from_dict(cls, data: dict[str, Any]) -> "ListeningText":
         return cls(
             id=data["id"],
             title=data["title"],

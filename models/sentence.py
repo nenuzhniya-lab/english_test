@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -16,7 +17,7 @@ class Sentence:
         return self.text.replace("_", "_____")
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Sentence":
+    def from_dict(cls, data: dict[str, Any]) -> "Sentence":
         return cls(
             id=data["id"],
             text=data["text"],

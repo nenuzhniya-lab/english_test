@@ -9,7 +9,7 @@ class SentenceService:
     def __init__(self, sentences: AbstractSentenceRepository):
         self._sentences = sentences
 
-    async def quiz_items(self) -> list[QuizItem]:
+    async def items(self, difficulty: str | None = None) -> list[QuizItem]:
         items = await self._sentences.get_all()
         result = []
         for s in items:

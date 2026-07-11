@@ -12,6 +12,11 @@ from models import Word, IrregularVerb, ListeningText, Sentence, UserSettings, U
 
 
 class AbstractWordRepository(ABC):
+    """Контракт (LSP) для всех реализаций (PyFile, будущий GoogleSheets):
+    get_all → всегда список (пустой при отсутствии данных, не None);
+    get_by_id → Word или None (без исключений на «не найдено»).
+    """
+
     @abstractmethod
     async def get_all(self) -> list[Word]: ...
 

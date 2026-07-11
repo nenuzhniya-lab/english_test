@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from models.difficulty import DIFFICULTY_ORDER
 from repositories.base import AbstractStatsRepository
 
-# Уровни, по которым есть контент слов (для адаптива сложности).
-WORD_LEVELS = ["A1", "A2", "B1", "B2"]
+# Ступени сложности слов по возрастанию (для адаптива).
+# Крайние переходы (EASY↓, HARD↑) — no-op: индекс за границей не сдвигается.
+WORD_LEVELS = [d.value for d in DIFFICULTY_ORDER]
 
 _THRESH_UP = 85     # ≥ этого % → предложить уровень выше
 _THRESH_DOWN = 45   # ≤ этого % → предложить уровень ниже
@@ -23,6 +25,19 @@ class StatsService:
     async def reset(self, user_id: int, level: str | None) -> None:
         if level in WORD_LEVELS:
             await self._repo.reset(user_id, level)
+
+    async def accuracy_by_level(self, user_id: int) -> list[tuple[str, int, int]]:
+        """Точность по уровням (кумулятивно): [(код_сложности, верно, всего), ...].
+
+        Только уровни, где были ответы. Данные из stats.json кумулятивные — не
+        оконные, поэтому это «всего», а не «за 7 дней».
+        """
+        result: list[tuple[str, int, int]] = []
+        for level in WORD_LEVELS:
+            correct, total = await self._repo.get(user_id, level)
+            if total:
+                result.append((level, correct, total))
+        return result
 
     async def suggestion(self, user_id: int, level: str | None) -> tuple[str, str, int] | None:
         """Возвращает (direction, target_level, accuracy%) или None.

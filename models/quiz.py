@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -16,17 +17,17 @@ class QuizQuestion:
     correct: int           # индекс правильного
     note: str | None = None  # показывается после ответа (напр. перевод предложения)
     # перевод каждого варианта (для reveal), выровнен с options; None где нет
-    option_notes: list | None = None
+    option_notes: list[str | None] | None = None
     ref: int | None = None   # id сущности (напр. слова) — для SRS; None где неприменимо
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "prompt": self.prompt, "options": self.options, "correct": self.correct,
             "note": self.note, "option_notes": self.option_notes, "ref": self.ref,
         }
 
     @classmethod
-    def from_dict(cls, d: dict) -> "QuizQuestion":
+    def from_dict(cls, d: dict[str, Any]) -> "QuizQuestion":
         return cls(
             prompt=d["prompt"], options=d["options"], correct=d["correct"],
             note=d.get("note"), option_notes=d.get("option_notes"), ref=d.get("ref"),
@@ -80,7 +81,7 @@ class QuizSession:
         self.qid += 1
 
     # ── (де)сериализация для FSM ──
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "section": self.section, "user_id": self.user_id, "chat_id": self.chat_id,
             "questions": [q.to_dict() for q in self.questions], "level": self.level,
@@ -89,7 +90,7 @@ class QuizSession:
         }
 
     @classmethod
-    def from_dict(cls, d: dict) -> "QuizSession":
+    def from_dict(cls, d: dict[str, Any]) -> "QuizSession":
         return cls(
             section=d["section"], user_id=d["user_id"], chat_id=d["chat_id"],
             questions=[QuizQuestion.from_dict(q) for q in d["questions"]],

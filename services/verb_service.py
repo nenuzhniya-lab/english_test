@@ -8,7 +8,7 @@ class VerbService:
     def __init__(self, verbs: AbstractVerbRepository):
         self._verbs = verbs
 
-    async def quiz_items(self) -> list[QuizItem]:
+    async def items(self, difficulty: str | None = None) -> list[QuizItem]:
         verbs = await self._verbs.get_all()
         return [
             QuizItem(

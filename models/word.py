@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 from models.level import Level
 
@@ -31,7 +32,7 @@ class Word:
         return self.meanings[0].russian if self.meanings else ""
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Word":
+    def from_dict(cls, data: dict[str, Any]) -> "Word":
         return cls(
             id=data["id"],
             english=data["english"],

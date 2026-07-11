@@ -1,19 +1,21 @@
 from __future__ import annotations
 
+from models.difficulty import word_difficulty
 from repositories.base import AbstractWordRepository
 from services.quiz_service import QuizItem
 
-_MIN_ITEMS = 4  # минимум для теста (4 варианта); иначе игнорируем фильтр уровня
+_MIN_ITEMS = 4  # минимум для теста (4 варианта); иначе игнорируем фильтр сложности
 
 
 class VocabularyService:
     def __init__(self, words: AbstractWordRepository):
         self._words = words
 
-    async def quiz_items(self, level: str | None = None) -> list[QuizItem]:
+    async def items(self, difficulty: str | None = None) -> list[QuizItem]:
+        """Вопросы по словам. difficulty — код EASY/MEDIUM/HARD или None («все»)."""
         words = await self._words.get_all()
-        if level:
-            filtered = [w for w in words if w.level.value == level]
+        if difficulty:
+            filtered = [w for w in words if word_difficulty(w.level.value).value == difficulty]
             if len(filtered) >= _MIN_ITEMS:
                 words = filtered  # иначе оставляем все — чтобы тест собрался
         items = []

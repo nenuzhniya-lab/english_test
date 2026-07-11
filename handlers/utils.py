@@ -2,12 +2,37 @@
 from __future__ import annotations
 
 import logging
+from typing import Optional
 
 from aiogram import Bot
 from aiogram.types import Message
 from aiogram.exceptions import TelegramBadRequest
 
+from keyboards.factory import to_markup
+from keyboards.spec import KeyboardSpec
+
 logger = logging.getLogger(__name__)
+
+
+async def swap_reply_keyboard(
+    bot: Bot, chat_id: int, text: str, spec: Optional[KeyboardSpec],
+    prev_service_msg_id: Optional[int] = None,
+) -> int:
+    """Меняет нижнюю reply-панель, не плодя мусор.
+
+    Telegram не даёт сменить reply-клавиатуру без нового сообщения. Поэтому шлём
+    одно служебное сообщение с новой панелью и удаляем предыдущее служебное (если
+    передан его id). Сообщения-вопросы теста сюда не попадают — они остаются в чате.
+
+    Возвращает id нового служебного сообщения — сохрани его, чтобы удалить в следующий раз.
+    """
+    if prev_service_msg_id is not None:
+        try:
+            await bot.delete_message(chat_id, prev_service_msg_id)
+        except Exception:
+            pass  # уже удалено / слишком старое — не критично
+    sent = await bot.send_message(chat_id, text, reply_markup=to_markup(spec))
+    return sent.message_id
 
 
 def _is_not_modified(error: Exception) -> bool:

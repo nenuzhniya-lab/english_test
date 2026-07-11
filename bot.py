@@ -10,6 +10,7 @@ from aiogram.enums import ParseMode
 
 from config import settings
 from containers import build_container, Container
+from migrations.runner import run_migrations
 from handlers import (
     start, quiz_flow, listening, settings as settings_handler, progress, fallback,
 )
@@ -52,6 +53,7 @@ async def _reminder_loop(bot: Bot, container: Container) -> None:
 
 
 async def main() -> None:
+    run_migrations(settings)  # мигрируем данные ДО загрузки репозиториями
     container = build_container()
 
     bot = Bot(

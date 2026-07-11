@@ -15,18 +15,6 @@ def text_view(text: ListeningText) -> str:
     )
 
 
-def progress_view(summary: dict, srs: dict, level: str | None) -> str:
-    best = f" (рекорд {summary['best']})" if summary["best"] > summary["streak"] else ""
-    return (
-        "📊 <b>Твой прогресс</b>\n\n"
-        f"🔥 Серия: <b>{summary['streak']}</b> дн.{best}\n"
-        f"🎯 Сегодня: <b>{summary['today']}/{summary['goal']}</b> ответов\n"
-        f"🎚 Уровень: <b>{level or 'Все'}</b>\n\n"
-        f"📚 Слова: изучается <b>{srs['total']}</b> · выучено <b>{srs['learned']}</b>\n"
-        f"🔁 К повторению сейчас: <b>{srs['due']}</b>"
-    )
-
-
 def settings_view(s: UserSettings) -> str:
     return (
         "⚙️ <b>Настройки</b>\n\n"

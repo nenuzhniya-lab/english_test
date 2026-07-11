@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -10,7 +11,7 @@ class IrregularVerb:
     translation: str
 
     @classmethod
-    def from_dict(cls, data: dict) -> "IrregularVerb":
+    def from_dict(cls, data: dict[str, Any]) -> "IrregularVerb":
         return cls(
             id=data["id"],
             v1=data["v1"],

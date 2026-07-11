@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -9,9 +10,9 @@ class ListenState:
     text_id: int
     level: str
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {"text_id": self.text_id, "level": self.level}
 
     @classmethod
-    def from_dict(cls, d: dict) -> "ListenState":
+    def from_dict(cls, d: dict[str, Any]) -> "ListenState":
         return cls(text_id=d["text_id"], level=d["level"])

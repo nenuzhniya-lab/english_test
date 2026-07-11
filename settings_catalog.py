@@ -6,8 +6,14 @@
 """
 from __future__ import annotations
 
-# (значение, подпись)
-LEVEL_OPTIONS = [(None, "🌍 Все"), ("A1", "A1"), ("A2", "A2"), ("B1", "B1"), ("B2", "B2")]
+from typing import Any
+
+from models.difficulty import Difficulty, DIFFICULTY_LABEL, ALL_LABEL
+
+# (значение, подпись). Сложность — 3 уровня + «Все» (см. models/difficulty.py).
+LEVEL_OPTIONS = [(None, ALL_LABEL)] + [
+    (d.value, DIFFICULTY_LABEL[d.value]) for d in Difficulty
+]
 TIME_OPTIONS = [(10, "⚡ 10 сек"), (15, "🚶 15 сек"), (25, "🐢 25 сек"), (0, "∞ Без таймера")]
 SIZE_OPTIONS = [(5, "5"), (10, "10"), (15, "15")]
 VOICE_OPTIONS = [
@@ -18,7 +24,7 @@ VOICE_OPTIONS = [
 ]
 
 
-def label_for(options: list[tuple], value) -> str:
+def label_for(options: list[tuple[Any, str]], value: Any) -> str:
     for v, lbl in options:
         if v == value:
             return lbl

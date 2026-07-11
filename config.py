@@ -60,6 +60,11 @@ class Settings:
         self.srs_file = str(_resolve_path(os.environ.get("SRS_FILE"), "srs.json"))
         self.progress_file = str(_resolve_path(os.environ.get("PROGRESS_FILE"), "progress.json"))
 
+        # Состояние миграций данных (список применённых) — отдельный файл-маркер.
+        self.migrations_state_file = str(
+            _resolve_path(os.environ.get("MIGRATIONS_STATE_FILE"), ".migrations.json")
+        )
+
         # Напоминания
         self.reminder_hour = int(os.environ.get("REMINDER_HOUR", "10"))  # час дня (0-23), локальное время
         self.tts_cache_dir = str(_resolve_path(os.environ.get("TTS_CACHE_DIR"), "tts_cache"))

@@ -35,11 +35,28 @@ class SrsService:
     async def due_ids(self, user_id: int) -> list[int]:
         return await self._repo.due(user_id, self._today())
 
-    async def progress(self, user_id: int) -> dict:
+    async def progress(self, user_id: int) -> dict[str, int]:
         boxes = await self._repo.boxes(user_id)
         return {
             "total": len(boxes),
             "learned": sum(1 for b in boxes if b >= _LEARNED_BOX),
+            "due": len(await self.due_ids(user_id)),
+        }
+
+    async def boxes_breakdown(self, user_id: int) -> dict[str, int]:
+        """Коробки Лейтнера 1–5 → 3 понятные группы (KISS для экрана прогресса).
+
+        Новые = box 1, Знакомые = 2–3, Выучено = 4–5.
+        """
+        boxes = await self._repo.boxes(user_id)
+        new = sum(1 for b in boxes if b <= 1)
+        familiar = sum(1 for b in boxes if 2 <= b <= 3)
+        learned = sum(1 for b in boxes if b >= _LEARNED_BOX)
+        return {
+            "new": new,
+            "familiar": familiar,
+            "learned": learned,
+            "studying": len(boxes),
             "due": len(await self.due_ids(user_id)),
         }
 

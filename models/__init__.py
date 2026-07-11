@@ -1,5 +1,13 @@
 """Доменные модели — общий язык всех слоёв."""
 from models.level import Level
+from models.difficulty import (
+    Difficulty,
+    word_difficulty,
+    text_difficulty,
+    difficulty_label,
+    label_to_difficulty,
+    DIFFICULTY_ORDER,
+)
 from models.word import Word, WordMeaning
 from models.verb import IrregularVerb
 from models.text import ListeningText
@@ -7,10 +15,16 @@ from models.sentence import Sentence
 from models.settings import UserSettings
 from models.quiz import QuizSession, QuizQuestion
 from models.listen import ListenState
-from models.progress import UserProgress
+from models.progress import UserProgress, ProgressSnapshot
 
 __all__ = [
     "Level",
+    "Difficulty",
+    "word_difficulty",
+    "text_difficulty",
+    "difficulty_label",
+    "label_to_difficulty",
+    "DIFFICULTY_ORDER",
     "Word",
     "WordMeaning",
     "IrregularVerb",
@@ -21,4 +35,5 @@ __all__ = [
     "QuizQuestion",
     "ListenState",
     "UserProgress",
+    "ProgressSnapshot",
 ]

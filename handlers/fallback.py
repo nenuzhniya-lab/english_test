@@ -5,17 +5,20 @@
 """
 from __future__ import annotations
 
-from aiogram import Router
+from aiogram import Router, Bot
 from aiogram.types import Message, CallbackQuery
 
-from keyboards.main_kb import main_menu_kb
+from containers import Container
+from handlers.effects import execute
 
 router = Router()
 
 
 @router.message()
-async def unknown_message(message: Message) -> None:
-    await message.answer("🤔 Не понял. Вот актуальное меню 👇", reply_markup=main_menu_kb())
+async def unknown_message(message: Message, bot: Bot, container: Container) -> None:
+    # Показываем актуальное главное меню (сбрасывает старую reply-панель).
+    await execute(container.main_vm.home(),
+                  bot=bot, chat_id=message.chat.id, user_id=message.from_user.id)
 
 
 @router.callback_query()

@@ -34,7 +34,7 @@ class ProgressService:
         p.total += 1
         await self._repo.save(p)
 
-    async def summary(self, user_id: int) -> dict:
+    async def summary(self, user_id: int) -> dict[str, int]:
         p = await self._repo.get(user_id)
         today = self._today()
         # серия жива, если последний активный день сегодня или вчера
