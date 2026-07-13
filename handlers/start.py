@@ -17,9 +17,10 @@ async def cmd_start(message: Message, container: Container) -> None:
     await dispatch_message(message, container, container.main_vm.welcome())
 
 
-@router.message(F.text == kb.BTN_SPEAK)
-async def speaking(message: Message, container: Container) -> None:
-    await dispatch_message(message, container, container.main_vm.speaking())
+@router.message(F.text == kb.BTN_STUDY_NOW)
+async def study_now(message: Message, container: Container) -> None:
+    effects = await container.quiz_vm.start(message.chat.id, message.from_user.id, "study")
+    await dispatch_message(message, container, effects)
 
 
 @router.message(F.text == kb.BTN_BACK)

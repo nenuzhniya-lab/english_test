@@ -16,9 +16,9 @@ from keyboards.spec import Button, InlineSpec, ReplySpec, inline, grid
 
 # ─────────────────────────── тексты reply-кнопок ───────────────────────────
 # Главное меню
+BTN_STUDY_NOW = "⚡ Учить сейчас"
 BTN_TESTS = "📝 Тесты"
 BTN_LISTEN = "🎧 Аудирование"
-BTN_SPEAK = "🗣 Говорение"
 BTN_PROGRESS = "📊 Прогресс"
 BTN_SETTINGS = "⚙️ Настройки"
 
@@ -27,6 +27,8 @@ BTN_WORDS = "📖 Слова"
 BTN_VERBS = "🔄 Глаголы"
 BTN_SENTENCES = "✍️ Предложения"
 BTN_REVIEW = "🔁 Повторение"        # может иметь суффикс « (N)» — матчить по префиксу
+BTN_MISTAKES = "❗ Мои ошибки"       # лог фактических ошибок; суффикс « (N)» — матчить по префиксу
+BTN_ENDLESS = "♾ Без конца"         # бесконечный режим по словам
 
 # Панель во время теста
 BTN_STOP = "⏹ Остановить тест"
@@ -53,9 +55,9 @@ _MENU_PLACEHOLDER = "Выбери раздел 👇"
 def main_menu() -> ReplySpec:
     return ReplySpec(
         rows=[
+            [Button(BTN_STUDY_NOW)],
             [Button(BTN_TESTS), Button(BTN_LISTEN)],
-            [Button(BTN_SPEAK), Button(BTN_PROGRESS)],
-            [Button(BTN_SETTINGS)],
+            [Button(BTN_PROGRESS), Button(BTN_SETTINGS)],
         ],
         placeholder=_MENU_PLACEHOLDER,
         persistent=True,
@@ -63,16 +65,17 @@ def main_menu() -> ReplySpec:
 
 
 # ─────────────────────────── тесты ───────────────────────────
-def tests_menu(review_due: int = 0) -> ReplySpec:
+def tests_menu(review_due: int = 0, mistakes_count: int = 0) -> ReplySpec:
     review = BTN_REVIEW + (f" ({review_due})" if review_due else "")
-    return ReplySpec(
-        rows=[
-            [Button(BTN_WORDS), Button(BTN_VERBS)],
-            [Button(BTN_SENTENCES), Button(review)],
-            [Button(BTN_BACK)],
-        ],
-        placeholder="Выбери тип теста 👇",
-    )
+    rows = [
+        [Button(BTN_WORDS), Button(BTN_VERBS)],
+        [Button(BTN_SENTENCES), Button(review)],
+    ]
+    if mistakes_count:
+        rows.append([Button(BTN_MISTAKES + f" ({mistakes_count})")])
+    rows.append([Button(BTN_ENDLESS)])
+    rows.append([Button(BTN_BACK)])
+    return ReplySpec(rows=rows, placeholder="Выбери тип теста 👇")
 
 
 def quiz_options(qid: int, options: List[str]) -> InlineSpec:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 import logging
+import time
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -10,7 +11,7 @@ from aiogram.enums import ParseMode
 
 from config import settings
 from containers import build_container, Container
-from migrations.runner import run_migrations
+from migrations import run_migrations
 from handlers import (
     start, quiz_flow, listening, settings as settings_handler, progress, fallback,
 )
@@ -52,6 +53,15 @@ async def _reminder_loop(bot: Bot, container: Container) -> None:
             await asyncio.sleep(3600)
 
 
+async def _profile_middleware(handler, event, data):
+    """PROFILE=1: логирует время обработки апдейта (замер до оптимизаций)."""
+    start = time.monotonic()
+    try:
+        return await handler(event, data)
+    finally:
+        logger.info("⏱ update handled in %.0f ms", (time.monotonic() - start) * 1000)
+
+
 async def main() -> None:
     run_migrations(settings)  # мигрируем данные ДО загрузки репозиториями
     container = build_container()
@@ -62,6 +72,9 @@ async def main() -> None:
     )
     dp = Dispatcher()
     dp["container"] = container  # доступно хендлерам как аргумент `container`
+
+    if settings.profile:
+        dp.update.outer_middleware(_profile_middleware)
 
     # fallback — последним: ловит всё необработанное (старые кнопки и т.п.)
     for module in (start, quiz_flow, listening, settings_handler, progress, fallback):

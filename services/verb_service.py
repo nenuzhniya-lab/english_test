@@ -15,6 +15,8 @@ class VerbService:
                 prompt=f"🔄 <b>{v.v1}</b>  ({v.translation})\n\nВыбери формы V2 / V3:",
                 answer=f"{v.v2} / {v.v3}",
                 answer_translation=v.translation,
+                ref=v.id,
+                kind="verb",
             )
             for v in verbs
         ]

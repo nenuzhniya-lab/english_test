@@ -25,6 +25,7 @@ from repositories.json_settings_repo import JsonSettingsRepository
 from repositories.json_stats_repo import JsonStatsRepository
 from repositories.json_srs_repo import JsonSrsRepository
 from repositories.json_progress_repo import JsonProgressRepository
+from repositories.json_mistakes_repo import JsonMistakesRepository
 from repositories.session_repo import SessionStore
 
 from providers.tts import EdgeTTSProvider
@@ -40,6 +41,8 @@ from services import (
     SrsService,
     ProgressService,
 )
+from services.mistakes_service import MistakesService
+from services.study_service import StudyService
 from services.timer_service import TimerService
 
 from viewmodels.main_menu_vm import MainMenuViewModel
@@ -61,6 +64,8 @@ class Container:
     stats: StatsService
     srs: SrsService
     progress: ProgressService
+    mistakes: MistakesService
+    study: StudyService
     # ── инфра (эфемерная) ──
     sessions: SessionStore
     timers: TimerService
@@ -83,6 +88,7 @@ def _build_repos():
         stats=JsonStatsRepository(settings.stats_file),
         srs=JsonSrsRepository(settings.srs_file),
         progress=JsonProgressRepository(settings.progress_file),
+        mistakes=JsonMistakesRepository(settings.mistakes_file),
     )
 
 
@@ -98,6 +104,8 @@ def _build_services(repos: dict) -> dict:
         stats=StatsService(repos["stats"]),
         srs=SrsService(repos["srs"]),
         progress=ProgressService(repos["progress"]),
+        mistakes=MistakesService(repos["mistakes"]),
+        study=StudyService(),
     )
 
 
@@ -115,7 +123,7 @@ def _build_viewmodels(svc: dict, sessions: SessionStore) -> dict:
                 "sentences": svc["sentences"],
             },
             svc["srs"], svc["stats"], svc["progress"], svc["settings"],
-            sessions, settings.quiz_options,
+            svc["mistakes"], svc["study"], sessions, settings.quiz_options,
         ),
     )
 
@@ -123,7 +131,7 @@ def _build_viewmodels(svc: dict, sessions: SessionStore) -> dict:
 def build_container() -> Container:
     repos = _build_repos()
     svc = _build_services(repos)
-    sessions = SessionStore()
+    sessions = SessionStore(path=settings.session_file)
     timers = TimerService()
     vms = _build_viewmodels(svc, sessions)
     return Container(

@@ -30,6 +30,7 @@ class VocabularyService:
                     prompt=f"🇬🇧 <b>{w.english}</b>  {phon}\n\nКак переводится?".replace("  \n", "\n"),
                     answer=w.primary_translation,
                     ref=w.id,
+                    kind="word",
                 )
             )
         return items

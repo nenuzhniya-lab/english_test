@@ -59,11 +59,17 @@ class Settings:
         self.stats_file = str(_resolve_path(os.environ.get("STATS_FILE"), "stats.json"))
         self.srs_file = str(_resolve_path(os.environ.get("SRS_FILE"), "srs.json"))
         self.progress_file = str(_resolve_path(os.environ.get("PROGRESS_FILE"), "progress.json"))
+        self.mistakes_file = str(_resolve_path(os.environ.get("MISTAKES_FILE"), "mistakes.json"))
 
         # Состояние миграций данных (список применённых) — отдельный файл-маркер.
         self.migrations_state_file = str(
             _resolve_path(os.environ.get("MIGRATIONS_STATE_FILE"), ".migrations.json")
         )
+        # Персистентные сессии экранов (активный тест переживает redeploy).
+        self.session_file = str(_resolve_path(os.environ.get("SESSION_FILE"), ".sessions.json"))
+
+        # Профилирование времени ответа (PROFILE=1 → лог мс на апдейт)
+        self.profile = os.environ.get("PROFILE") == "1"
 
         # Напоминания
         self.reminder_hour = int(os.environ.get("REMINDER_HOUR", "10"))  # час дня (0-23), локальное время

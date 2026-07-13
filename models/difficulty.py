@@ -77,3 +77,22 @@ _LABEL_TO_CODE = {label: code for code, label in DIFFICULTY_LABEL.items()}
 def label_to_difficulty(label: str) -> str | None:
     """Подпись reply-кнопки → код сложности (для разбора нажатия). Неизвестная → None."""
     return _LABEL_TO_CODE.get(label)
+
+
+class Level(str, Enum):
+    """CEFR-уровень контента (A1..C2). Сырьё для маппера сложности выше."""
+    A1 = "A1"
+    A2 = "A2"
+    B1 = "B1"
+    B2 = "B2"
+    C1 = "C1"
+    C2 = "C2"
+
+    @property
+    def order(self) -> int:
+        return list(Level).index(self)
+
+    def shifted(self, delta: int) -> "Level":
+        levels = list(Level)
+        idx = max(0, min(len(levels) - 1, self.order + delta))
+        return levels[idx]

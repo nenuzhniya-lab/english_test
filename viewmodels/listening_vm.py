@@ -1,11 +1,12 @@
 """ViewModel аудирования: уровни (reply) → тексты (inline) → плеер (reply)."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import List, Optional
 
 from keyboards import builders as kb
-from models import ListenState
+from models import ListenState, ListeningText
 from presenters import text_view
 from providers.tts import Speed
 from repositories.session_repo import SessionStore
@@ -32,7 +33,8 @@ class ListeningViewModel:
         return f"listen:{user_id}"
 
     def _load(self, user_id: int) -> Optional[ListenState]:
-        return self._sessions.get(self._key(user_id))
+        raw = self._sessions.get(self._key(user_id))
+        return ListenState.from_dict(raw) if raw else None
 
     async def open(self, user_id: int) -> List[Effect]:
         levels = await self._listening.levels()
@@ -52,8 +54,17 @@ class ListeningViewModel:
         text = await self._listening.get(text_id)
         if not text:
             return [Send(ViewState("Текст не найден."))]
-        self._sessions.set(self._key(user_id), ListenState(text.id, text.level.value))
+        self._sessions.set(self._key(user_id), ListenState(text.id, text.level.value).to_dict())
+        # прогрев обычной скорости в фоне → первое воспроизведение мгновенно
+        voice = (await self._settings.get(user_id)).voice
+        asyncio.create_task(self._prewarm(text, voice))
         return [SwapPanel(ViewState(text_view(text), kb.audio_player()))]
+
+    async def _prewarm(self, text: ListeningText, voice: str) -> None:
+        try:
+            await self._listening.audio(text, Speed.NORMAL, voice)
+        except Exception:
+            pass  # прогрев не критичен
 
     async def play(self, user_id: int, speed_btn: str) -> List[Effect]:
         listen = self._load(user_id)

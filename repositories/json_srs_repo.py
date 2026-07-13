@@ -1,28 +1,18 @@
 from __future__ import annotations
 
-import json
-import asyncio
-from pathlib import Path
-
 from repositories.base import AbstractSrsRepository
+from repositories._jsonio import JsonStore
 
 
-class JsonSrsRepository(AbstractSrsRepository):
+class JsonSrsRepository(JsonStore, AbstractSrsRepository):
     """Интервальное повторение: {user_id: {word_id: {"box": n, "due": day}}}."""
 
     def __init__(self, file_path: str):
-        self._path = Path(file_path)
-        self._path.parent.mkdir(parents=True, exist_ok=True)
-        self._lock = asyncio.Lock()
-        self._cache: dict = self._load()
+        super().__init__(file_path)
+        self._cache: dict = self._read()
 
-    def _load(self) -> dict:
-        if not self._path.exists():
-            return {}
-        return json.loads(self._path.read_text(encoding="utf-8"))
-
-    def _flush(self) -> None:
-        self._path.write_text(json.dumps(self._cache, ensure_ascii=False), encoding="utf-8")
+    async def _flush(self) -> None:
+        await self._write(self._cache, indent=None)
 
     async def get(self, user_id: int, word_id: int) -> tuple[int, int]:
         e = self._cache.get(str(user_id), {}).get(str(word_id))
@@ -31,7 +21,7 @@ class JsonSrsRepository(AbstractSrsRepository):
     async def set(self, user_id: int, word_id: int, box: int, due_day: int) -> None:
         async with self._lock:
             self._cache.setdefault(str(user_id), {})[str(word_id)] = {"box": box, "due": due_day}
-            self._flush()
+            await self._flush()
 
     async def due(self, user_id: int, today: int) -> list[int]:
         user = self._cache.get(str(user_id), {})

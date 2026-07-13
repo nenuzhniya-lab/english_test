@@ -23,6 +23,8 @@ class SentenceService:
                     answer=s.answer,
                     note=note,
                     answer_translation=WORD_TRANSLATIONS.get(s.answer.lower()),
+                    ref=s.id,
+                    kind="sentence",
                 )
             )
         return result

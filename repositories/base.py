@@ -62,13 +62,18 @@ class AbstractSettingsRepository(ABC):
 
 
 class AbstractStatsRepository(ABC):
-    """Read-write: накопленная точность по уровням (correct, total) для адаптива."""
+    """Read-write: точность по уровням, разбитая по дням (для оконного адаптива).
+
+    `day` — порядковый номер дня (date.toordinal()). Сервис задаёт окно.
+    """
 
     @abstractmethod
-    async def get(self, user_id: int, level: str) -> tuple[int, int]: ...
+    async def add(self, user_id: int, level: str, correct: int, total: int, day: int) -> None: ...
 
     @abstractmethod
-    async def add(self, user_id: int, level: str, correct: int, total: int) -> None: ...
+    async def window(self, user_id: int, level: str, since_day: int) -> tuple[int, int]:
+        """Суммарные (correct, total) по дням `>= since_day`."""
+        ...
 
     @abstractmethod
     async def reset(self, user_id: int, level: str) -> None: ...
@@ -82,6 +87,31 @@ class AbstractProgressRepository(ABC):
 
     @abstractmethod
     async def save(self, progress: UserProgress) -> None: ...
+
+
+class AbstractMistakesRepository(ABC):
+    """Read-write: лог фактических ошибок по (kind, ref). Отдельно от SRS-расписания."""
+
+    @abstractmethod
+    async def bump(self, user_id: int, kind: str, ref: int, day: str) -> None:
+        """Неверный ответ: count += 1, streak = 0, last = day."""
+        ...
+
+    @abstractmethod
+    async def get(self, user_id: int, kind: str, ref: int) -> tuple[int, int] | None:
+        """(count, streak) или None, если ошибки по сущности нет."""
+        ...
+
+    @abstractmethod
+    async def set_streak(self, user_id: int, kind: str, ref: int, streak: int) -> None: ...
+
+    @abstractmethod
+    async def remove(self, user_id: int, kind: str, ref: int) -> None: ...
+
+    @abstractmethod
+    async def entries(self, user_id: int) -> list[tuple[str, int, int, str]]:
+        """Список (kind, ref, count, last) всех ошибок пользователя."""
+        ...
 
 
 class AbstractSrsRepository(ABC):

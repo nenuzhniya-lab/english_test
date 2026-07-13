@@ -12,7 +12,7 @@ from presenters import settings_view
 from services.settings_service import SettingsService
 from services.stats_service import StatsService
 from settings_catalog import LEVEL_OPTIONS, TIME_OPTIONS, SIZE_OPTIONS, VOICE_OPTIONS
-from viewmodels.base import Effect, EditCurrent, Notify, Send, SwapPanel, ViewState
+from viewmodels.base import Effect, EditCurrent, Send, SwapPanel, ViewState
 
 
 @dataclass(frozen=True)
@@ -60,24 +60,21 @@ class SettingsViewModel:
         try:
             s = await self._settings.update(user_id, f.model_field, self._cast(f.model_field, raw))
         except ValueError:
-            return [Notify("Неизвестное значение", alert=True)]
-        view = ViewState(f.title, self._chooser(cb_field, f, getattr(s, f.model_field)))
-        return [EditCurrent(view), Notify("✅ Сохранено")]
+            return []  # невалидное значение (устаревшая кнопка) — молча игнорируем
+        # ✅ у выбранного значения в чузере — само по себе подтверждение
+        return [EditCurrent(ViewState(f.title, self._chooser(cb_field, f, getattr(s, f.model_field))))]
 
     # ── адаптив: применить/оставить предложение сменить сложность ──
     async def set_level(self, user_id: int, level: str) -> List[Effect]:
         await self._settings.update(user_id, "level", level)
         await self._stats.reset(user_id, level)  # свежий отсчёт на новом уровне
-        return [
-            EditCurrent(ViewState(
-                f"✅ Сложность изменена на <b>{difficulty_label(level)}</b>. Продолжаем 💪", None)),
-            Notify("Готово"),
-        ]
+        return [EditCurrent(ViewState(
+            f"✅ Сложность изменена на <b>{difficulty_label(level)}</b>. Продолжаем 💪", None))]
 
     async def keep_level(self, user_id: int) -> List[Effect]:
         s = await self._settings.get(user_id)
         await self._stats.reset(user_id, s.level)  # не предлагать снова сразу
-        return [EditCurrent(ViewState("Ок, оставляем текущий уровень 👍", None)), Notify("")]
+        return [EditCurrent(ViewState("Ок, оставляем текущий уровень 👍", None))]
 
     @staticmethod
     def _chooser(cb_field: str, f: _Field, current: Any) -> InlineSpec:

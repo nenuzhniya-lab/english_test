@@ -1,6 +1,7 @@
 """Мелкие переиспользуемые утилиты хендлеров (DRY)."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Optional
 
@@ -25,13 +26,18 @@ async def swap_reply_keyboard(
     передан его id). Сообщения-вопросы теста сюда не попадают — они остаются в чате.
 
     Возвращает id нового служебного сообщения — сохрани его, чтобы удалить в следующий раз.
+
+    Сначала шлём новое, потом удаляем старое — иначе на миг остаётся экран без панели
+    (визуально «рвано»). Удаление старого — фоном, не задерживает ответ.
     """
-    if prev_service_msg_id is not None:
-        try:
-            await bot.delete_message(chat_id, prev_service_msg_id)
-        except Exception:
-            pass  # уже удалено / слишком старое — не критично
     sent = await bot.send_message(chat_id, text, reply_markup=to_markup(spec))
+    if prev_service_msg_id is not None:
+        async def _cleanup() -> None:
+            try:
+                await bot.delete_message(chat_id, prev_service_msg_id)
+            except Exception:
+                pass  # уже удалено / слишком старое — не критично
+        asyncio.create_task(_cleanup())
     return sent.message_id
 
 

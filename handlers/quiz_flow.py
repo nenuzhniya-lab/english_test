@@ -37,6 +37,19 @@ async def start_review(message: Message, container: Container) -> None:
     await dispatch_message(message, container, effects)
 
 
+@router.message(F.text.startswith(kb.BTN_MISTAKES))
+async def start_mistakes(message: Message, container: Container) -> None:
+    effects = await container.quiz_vm.start(message.chat.id, message.from_user.id, "mistakes")
+    await dispatch_message(message, container, effects)
+
+
+@router.message(F.text == kb.BTN_ENDLESS)
+async def start_endless(message: Message, container: Container) -> None:
+    effects = await container.quiz_vm.start(
+        message.chat.id, message.from_user.id, "vocabulary", endless=True)
+    await dispatch_message(message, container, effects)
+
+
 @router.message(F.text == kb.BTN_STOP)
 async def stop(message: Message, container: Container) -> None:
     await dispatch_message(message, container, await container.quiz_vm.stop(message.from_user.id))
@@ -44,8 +57,11 @@ async def stop(message: Message, container: Container) -> None:
 
 @router.callback_query(F.data.startswith(cb.ANSWER))
 async def on_answer(callback: CallbackQuery, container: Container) -> None:
+    uid = callback.from_user.id
     qid, chosen = cb.parse_answer(callback.data)
-    effects = await container.quiz_vm.answer(callback.from_user.id, qid, chosen)
+    # мгновенный ack с вердиктом (гасит спиннер на кнопке ДО записи на диск)
+    await callback.answer(container.quiz_vm.ack_text(uid, qid, chosen))
+    effects = await container.quiz_vm.answer(uid, qid, chosen)
     await dispatch_callback(callback, container, effects)
 
 

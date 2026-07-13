@@ -27,6 +27,7 @@ async def open_field(message: Message, container: Container) -> None:
 
 @router.callback_query(lambda c: cb.is_setting_apply(c.data))
 async def apply_setting(callback: CallbackQuery, container: Container) -> None:
+    await callback.answer()  # мгновенно гасим спиннер
     field, raw = cb.parse_setting_apply(callback.data)
     effects = await container.settings_vm.apply(callback.from_user.id, field, raw)
     await dispatch_callback(callback, container, effects)
@@ -34,6 +35,7 @@ async def apply_setting(callback: CallbackQuery, container: Container) -> None:
 
 @router.callback_query(F.data.startswith(cb.LEVEL_SET))
 async def level_apply(callback: CallbackQuery, container: Container) -> None:
+    await callback.answer()
     level = cb.parse_level_set(callback.data)
     effects = await container.settings_vm.set_level(callback.from_user.id, level)
     await dispatch_callback(callback, container, effects)
@@ -41,5 +43,6 @@ async def level_apply(callback: CallbackQuery, container: Container) -> None:
 
 @router.callback_query(F.data == cb.LEVEL_KEEP)
 async def level_keep(callback: CallbackQuery, container: Container) -> None:
+    await callback.answer()
     effects = await container.settings_vm.keep_level(callback.from_user.id)
     await dispatch_callback(callback, container, effects)

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
+from typing import List, Optional, Protocol
 
 from models import QuizQuestion
 
@@ -17,7 +18,8 @@ class QuizItem:
     answer: str          # правильный ответ (текст кнопки)
     note: str | None = None  # показывается после ответа (напр. перевод предложения)
     answer_translation: str | None = None  # перевод слова-ответа (для показа вариантов)
-    ref: int | None = None   # id сущности (напр. слова) — для SRS
+    ref: int | None = None   # id сущности — для SRS/ошибок
+    kind: str | None = None  # тип сущности: word|verb|sentence
 
 
 class QuizService:
@@ -57,5 +59,16 @@ class QuizService:
                 note=item.note,
                 option_notes=option_notes,
                 ref=item.ref,
+                kind=item.kind,
             ))
         return questions
+
+
+class QuestionProvider(Protocol):
+    """Поставщик вопросов теста (OCP): движок работает только с этим интерфейсом.
+
+    Новый тип теста = новый провайдер + запись в реестр, без правок в движке.
+    """
+    async def items(self, difficulty: Optional[str] = None) -> List[QuizItem]:
+        """Вопросы теста. difficulty учитывается где применим (иначе игнорируется)."""
+        ...
