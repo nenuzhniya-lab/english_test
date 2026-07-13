@@ -1,4 +1,18 @@
-from providers.ai.base import AbstractAIProvider
-from providers.ai.stub import StubAIProvider
+"""Абстракция LLM/AI (генерация вопросов, разбор ошибок). Реализация — позже."""
+from __future__ import annotations
 
-__all__ = ["AbstractAIProvider", "StubAIProvider"]
+from abc import ABC, abstractmethod
+
+
+class AbstractAIProvider(ABC):
+    @abstractmethod
+    async def complete(self, prompt: str) -> str:
+        """Базовый текстовый запрос к модели."""
+        ...
+
+
+class StubAIProvider(AbstractAIProvider):
+    """Заглушка: фиксирует интерфейс до подключения реальной модели."""
+
+    async def complete(self, prompt: str) -> str:
+        raise NotImplementedError("AI провайдер ещё не реализован")
