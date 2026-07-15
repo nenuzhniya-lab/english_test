@@ -18,9 +18,12 @@ Telegram-бот изучения английского. Python 3.9, aiogram 3.7
 - **handlers/effects.py** — ЕДИНСТВЕННЫЙ мост Effect→aiogram (send/edit/delete/voice/timer/panel).
 - **viewmodels/** — логика экранов, без aiogram. Возвращают `ViewState` + `list[Effect]`.
 - **services/** — бизнес-логика (quiz/srs/stats/…). Не знают про Telegram.
-- **repositories/** — DAO. `pyfile/` (контент), `json_*` (данные юзера, база `_jsonio.JsonStore`), `pyfile.py` (контент), `session_repo` (эфемерный TTL).
+- **repositories/** — DAO. `pyfile/` (контент), `json_*` (данные юзера, база `_jsonio.JsonStore`), `session_repo` (эфемерный TTL).
 - **keyboards/** — `spec` (домен) → `factory.to_markup`; `builders` — раскладки + текст-константы reply-кнопок.
-- **models/** — dataclass + `difficulty` (мапперы) + `ProgressSnapshot`.
+- **models/** — `difficulty`(+`Level`, мапперы) · `content`(word/verb/text/sentence) · `settings` · `quiz`(+`ListenState`) · `progress`.
+- **presenters/**, **migrations/**, **providers/{tts,stt,ai}/**, **repositories/pyfile/** — пакеты
+  с самодостаточным `__init__.py` (схлопнуты в один файл). Так остатки старых файлов при веб-загрузке
+  на GitHub безвредны — входной `__init__.py` обновляется на месте, а не перебивается старым пакетом.
 
 ## Конвенции
 
@@ -30,7 +33,7 @@ Telegram-бот изучения английского. Python 3.9, aiogram 3.7
   `execute(...)` напрямую. Хелперы собирают `bot/chat_id/user_id/container` в одном месте.
 - **Callback-хендлеры делают `await callback.answer(...)` ПЕРВЫМ** — до тяжёлой работы (запись на
   диск и т.п.), чтобы спиннер на inline-кнопке гас мгновенно (без «рваной» анимации). Поэтому VM
-  НЕ шлют `Notify` для callback-действий — всплывашку показывает хендлер (для теста — `quiz_vm.ack_text`. Строки/презентеры — `presenters.py`, миграции — `migrations.py`).
+  НЕ шлют `Notify` для callback-действий — всплывашку показывает хендлер (для теста — `quiz_vm.ack_text`).
 - Состояние экрана (тест/аудио) — в `SessionStore`, ключи `quiz:<uid>` / `listen:<uid>` / `panel:<uid>`.
 - Сложность хранится кодом `EASY/MEDIUM/HARD` (или `None`=все). Поле `UserSettings.level` — историческое
   имя, значение = Difficulty (переименование отложено, чтобы не двоить работу).
@@ -46,7 +49,7 @@ Telegram-бот изучения английского. Python 3.9, aiogram 3.7
 - **Таймер теста**: гонки гасятся полем `qid` (ответ/переход инкрементит его; устаревший таймаут видит
   несовпадение и выходит). `timer_service` держит ≤1 таймер на юзера.
 - **Миграции** идемпотентны и отмечаются в `.migrations.json`; запускать ДО `build_container()`
-  (репозитории кэшируют файлы в `__init__`). Сейчас две (в `migrations.py`): m001 (CEFR→Difficulty), m002 (stats по дням).
+  (репозитории кэшируют файлы в `__init__`). Сейчас две (в `migrations/`): m001 (CEFR→Difficulty), m002 (stats по дням).
 - **Сессии персистентны**: `SessionStore(path=.sessions.json)` хранит значения как `to_dict()`
   (JSON), TTL по wall-clock → активный тест переживает redeploy. Поэтому quiz/listen кладут в стор
   **dict**, не объект (`_save` = `to_dict()`, `_load` = `from_dict()`).

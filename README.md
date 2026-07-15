@@ -133,28 +133,37 @@ Data / Providers        data/*.py, *.json, providers/*
 - Клавиатуры — доменные спеки (`keyboards/spec.py`) → `factory.to_markup`. Reply = навигация,
   inline = выбор ответа/значения.
 
-Подробности — в [`ARCHITECTURE.md`](ARCHITECTURE.md). Рабочие инварианты — в [`CLAUDE.md`](CLAUDE.md).
+Рабочие инварианты и карта слоёв — в [`CLAUDE.md`](CLAUDE.md).
+
+### 🎬 Кнопки и «анимации»
+- **Мгновенный ack.** На нажатие inline-кнопки бот отвечает `callback.answer()` **первым делом**
+  (в тесте — сразу с вердиктом «✅ Верно! / ❌ Неверно»), ДО записи на диск → спиннер на кнопке
+  гаснет мгновенно, без «залипания».
+- **Плавная смена нижней панели.** `swap_reply_keyboard` сначала шлёт новую панель, потом удаляет
+  старую служебную **фоном** → нет мигания «экран без клавиатуры».
+- **Разбор ошибок в чате.** Каждый вопрос — отдельным сообщением; отвеченные помечаются ✅/❌ и
+  остаются в чате (можно прокрутить и разобрать).
 
 ### Структура
 
 ```
-bot.py                # точка входа: миграции → контейнер → polling
+bot.py                # точка входа: миграции → контейнер → polling (+PROFILE-тайминг)
 config.py             # .env через stdlib
 containers.py         # композиционный корень: repos → services → viewmodels
 callbacks.py          # формат callback_data (inline-действия)
 settings_catalog.py   # опции настроек
+migrations/           # __init__.py: m001 (CEFR→Difficulty), m002 (stats по дням), runner
+presenters/           # __init__.py: карточки, экран прогресса (юникод-бары), строки-секции
 
-migrations/           # m001 (CEFR→Difficulty) + runner (idempotent, файл-маркер)
-models/               # доменные dataclass + difficulty (маппер) + ProgressSnapshot
+models/               # difficulty(+Level) · content(word/verb/text/sentence) · settings · quiz(+ListenState) · progress
 data/                 # контент как .py (слова 999 · глаголы · предложения · тексты 150)
-repositories/         # DAO: pyfile (контент), json_* (данные юзера), session_repo (TTL)
-providers/            # tts(edge) · stt(stub) · ai(stub)
-services/             # quiz · vocabulary/verb/sentence · listening · settings · stats · srs · progress · timer
+repositories/         # base · json_* (данные юзера, база _jsonio) · pyfile (контент) · session_repo (TTL)
+providers/            # tts (edge, ретраи+прогрев) · stt (stub) · ai (stub)
+services/             # quiz(+QuestionProvider) · vocabulary/verb/sentence · listening · settings · stats · srs · progress · mistakes · study · timer
 viewmodels/           # base (ViewState+Effect) + main/settings/listening/progress/quiz
 keyboards/            # spec (домен) · factory (→aiogram) · builders (раскладки)
-presenters/           # cards · progress_presenter (бары) · strings (i18n-шов)
 handlers/             # тонкие адаптеры + effects (мост в aiogram)
-tests/                # pytest: модели, сервисы, миграция, VM без aiogram
+tests/                # pytest (79): units · migrations · viewmodels · integration + conftest
 ```
 
 ---
@@ -181,4 +190,4 @@ tests/                # pytest: модели, сервисы, миграция, 
 - 🗣 Speaking: голос → STT → проверка произношения
 - ✍️ Активный ввод ответа (typing) вместо выбора из 4
 - ☁️ Миграция контента на Google Sheets
-- 🔤 i18n через `presenters/strings.py`
+- 🔤 i18n через строки-секции в `presenters/`
